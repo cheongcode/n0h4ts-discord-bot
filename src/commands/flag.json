@@ -1,0 +1,18 @@
+{
+	"n0h4ts_5meetups_2025": {
+		"roleId": "111222333444555666",
+		"message": "🎉 Thank you for your dedication! You've attended 5 meetups and earned the Regular Attendee role!"
+	},
+	"n0h4ts_w3bsite_fl4g": {
+		"roleId": "111222333444555666",
+		"message": "🎉 Great job! You've found the hidden flag on our website and earned the Web Explorer role!"
+	},
+	"n0h4ts_standcon_2025": {
+		"roleId": "111222333444555666",
+		"message": "🎉 Thanks for participating in STANDCON 2025! You've earned the STANDCON 2025 Participant role!"
+	},
+    "n0h4ts_cyberleague_2025": {
+		"roleId": "111222333444555666",
+		"message": "🎉 Thanks for participating in Cyber League 2025! You've earned the Cyber League 2025 Participant role!"
+	}
+}
