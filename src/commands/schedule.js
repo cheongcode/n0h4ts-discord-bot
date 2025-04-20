@@ -1,42 +1,35 @@
+const { SlashCommandBuilder } = require('discord.js');
 const schedule = require('node-schedule');
 
 const scheduledJobs = new Map();
 
 module.exports = {
-    name: 'schedule',
-    description: 'Schedule, list, or delete scheduled messages',
-    options: [
-        {
-            name: 'action',
-            type: 3,
-            description: 'Choose an action: schedule, list, delete',
-            required: true,
-            choices: [
-                { name: 'schedule', value: 'schedule' },
-                { name: 'list', value: 'list' },
-                { name: 'delete', value: 'delete' }
-            ]
-        },
-        {
-            name: 'message',
-            type: 3,
-            description: 'Message to be scheduled (required for scheduling)',
-            required: false
-        },
-        {
-            name: 'datetime',
-            type: 3,
-            description: 'Optional: Date and time (e.g., "2024-06-15 14:30", "14:30", or "tomorrow 09:00")',
-            required: false
-        },
-        {
-            name: 'job_id',
-            type: 3,
-            description: 'Job ID to delete (required for deletion)',
-            required: false
-        }
-    ],
-    execute: async (interaction) => {
+    data: new SlashCommandBuilder()
+        .setName('schedule')
+        .setDescription('Schedule, list, or delete scheduled messages')
+        .addStringOption(option =>
+            option.setName('action')
+                .setDescription('Choose an action: schedule, list, delete')
+                .setRequired(true)
+                .addChoices(
+                    { name: 'schedule', value: 'schedule' },
+                    { name: 'list', value: 'list' },
+                    { name: 'delete', value: 'delete' }
+                ))
+        .addStringOption(option =>
+            option.setName('message')
+                .setDescription('Message to be scheduled (required for scheduling)')
+                .setRequired(false))
+        .addStringOption(option =>
+            option.setName('datetime')
+                .setDescription('Optional: Date and time (e.g., "2024-06-15 14:30", "14:30", or "tomorrow 09:00")')
+                .setRequired(false))
+        .addStringOption(option =>
+            option.setName('job_id')
+                .setDescription('Job ID to delete (required for deletion)')
+                .setRequired(false)),
+
+    async execute(interaction) {
         const action = interaction.options.getString('action');
 
         if (action === 'list') {
@@ -99,7 +92,7 @@ module.exports = {
             });
 
             scheduledJobs.set(jobId, { job, message, date });
-            await interaction.reply(`Message scheduled for ${date.toLocaleString()} ✅\n**Job ID:** ${jobId}`);
+            return await interaction.reply(`Message scheduled for ${date.toLocaleString()}. ID: **${jobId}** 📅`);
         }
     }
 }; 

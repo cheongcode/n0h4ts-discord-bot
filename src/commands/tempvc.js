@@ -1,25 +1,23 @@
-const { ChannelType, PermissionFlagsBits } = require('discord.js');
+const { ChannelType, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 
 const tempChannels = new Map();
 
 module.exports = {
-    name: 'tempvc',
-    description: 'Create a temporary voice channel',
-    options: [
-        {
-            name: 'name',
-            type: 3,
-            description: 'Name of the voice channel',
-            required: true
-        },
-        {
-            name: 'user_limit',
-            type: 4,
-            description: 'Maximum number of users (optional)',
-            required: false
-        }
-    ],
-    execute: async (interaction) => {
+    data: new SlashCommandBuilder()
+        .setName('tempvc')
+        .setDescription('Create a temporary voice channel')
+        .addStringOption(option =>
+            option.setName('name')
+                .setDescription('Name of the voice channel')
+                .setRequired(true))
+        .addIntegerOption(option =>
+            option.setName('user_limit')
+                .setDescription('Maximum number of users (optional)')
+                .setRequired(false)
+                .setMinValue(0)
+                .setMaxValue(99)),
+
+    async execute(interaction) {
         try {
             const name = interaction.options.getString('name');
             const userLimit = interaction.options.getInteger('user_limit');
