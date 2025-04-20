@@ -9,12 +9,24 @@ const client = new Client({
 
 client.commands = new Collection();
 
-// Load commands
-const commandFiles = fs.readdirSync(path.join(__dirname, 'commands')).filter(file => file.endsWith('.js'));
-for (const file of commandFiles) {
-  const command = require(`./commands/${file}`);
-  client.commands.set(command.name, command);
+// Function to load commands from a directory
+function loadCommandsFromDir(dir) {
+  const commandFiles = fs.readdirSync(dir).filter(file => file.endsWith('.js'));
+  for (const file of commandFiles) {
+    try {
+      const command = require(path.join(dir, file));
+      if (command.data) {
+        client.commands.set(command.data.name, command);
+      }
+    } catch (error) {
+      console.error(`Error loading command from ${file}:`, error);
+    }
+  }
 }
+
+// Load commands from all directories
+loadCommandsFromDir(path.join(__dirname, 'commands'));
+loadCommandsFromDir(path.join(__dirname, 'commands/moderation'));
 
 // Load events
 const eventFiles = fs.readdirSync(path.join(__dirname, 'events')).filter(file => file.endsWith('.js'));

@@ -1,16 +1,15 @@
+const { SlashCommandBuilder } = require('discord.js');
 const axios = require('axios');
 
 module.exports = {
-  name: 'cve',
-  description: 'Fetches information about a specific CVE',
-  options: [
-    {
-      name: 'id',
-      description: 'The CVE ID (e.g., CVE-2024-1234)',
-      type: 3, // STRING
-      required: true
-    }
-  ],
+  data: new SlashCommandBuilder()
+    .setName('cve')
+    .setDescription('Fetches information about a specific CVE')
+    .addStringOption(option =>
+      option.setName('id')
+        .setDescription('The CVE ID (e.g., CVE-2024-1234)')
+        .setRequired(true)),
+
   async execute(interaction) {
     const cveId = interaction.options.getString('id');
     
@@ -21,13 +20,13 @@ module.exports = {
       const description = cveData.descriptions[0].value;
       const severity = cveData.metrics?.cvssMetricV31?.[0]?.cvssData?.baseScore || 'Not available';
       
-      interaction.reply({
+      await interaction.reply({
         content: `🔍 **${cveId}**\n📝 **Description:** ${description}\n⚠️ **Severity Score:** ${severity}`,
         ephemeral: true
       });
     } catch (error) {
       console.error('CVE API Error:', error);
-      interaction.reply({
+      await interaction.reply({
         content: '❌ Error fetching CVE information. Please check the CVE ID and try again.',
         ephemeral: true
       });

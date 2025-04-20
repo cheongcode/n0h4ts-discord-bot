@@ -1,19 +1,17 @@
-const { ChannelType, PermissionFlagsBits } = require('discord.js');
+const { ChannelType, PermissionFlagsBits, SlashCommandBuilder } = require('discord.js');
 
 const tempChats = new Map();
 
 module.exports = {
-    name: 'tempchat',
-    description: 'Create a temporary text channel',
-    options: [
-        {
-            name: 'name',
-            type: 3,
-            description: 'Name of the text channel',
-            required: true
-        }
-    ],
-    execute: async (interaction) => {
+    data: new SlashCommandBuilder()
+        .setName('tempchat')
+        .setDescription('Create a temporary text channel')
+        .addStringOption(option =>
+            option.setName('name')
+                .setDescription('Name of the text channel')
+                .setRequired(true)),
+
+    async execute(interaction) {
         try {
             const name = interaction.options.getString('name');
             

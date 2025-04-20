@@ -1,3 +1,5 @@
+const { SlashCommandBuilder } = require('discord.js');
+
 module.exports = {
   name: 'whoami',
   description: 'Displays your Discord user information',
