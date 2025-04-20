@@ -1,7 +1,7 @@
 const { PermissionFlagsBits } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const configPath = path.join(__dirname, '..', 'config', 'flags.json');
+const configPath = path.join(__dirname, '..', 'commands', 'flags.json');
 
 let FLAGS_CONFIG = {};
 try {
@@ -72,8 +72,11 @@ module.exports = {
                 // add the role to the user
                 await member.roles.add(ROLE_ID);
 
+                // Use the custom congratulations message from flags.json or fall back to a default message
+                const congratsMessage = flagData.message || '🎉 Congratulations! You\'ve found the correct flag and received a special role!';
+
                 interaction.editReply({
-                    content: '🎉 Congratulations! You\'ve found the correct flag and received a special role!',
+                    content: congratsMessage,
                     ephemeral: true
                 });
             } catch (error) {
