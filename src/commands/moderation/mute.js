@@ -55,32 +55,34 @@ module.exports = {
         }
 
         // Check if the target is moderatable (not higher role than the bot)
-        // if (!targetMember.moderatable) {
-        //     return interaction.reply({
-        //         content: '❌ I cannot mute this user. They may have a higher role than me.',
-        //         ephemeral: true
-        //     });
-        // }
+        if (!targetMember.moderatable) {
+            return interaction.reply({
+                content: '❌ I cannot mute this user. They may have a higher role than me.',
+                ephemeral: true
+            });
+        }
 
         // Check if the executor is trying to mute someone with a higher role
-        // if (
-        //     interaction.member.roles.highest.position <= targetMember.roles.highest.position &&
-        //     interaction.guild.ownerId !== interaction.user.id
-        // ) {
-        //     return interaction.reply({
-        //         content: '❌ You cannot mute someone with a higher or equal role to you.',
-        //         ephemeral: true
-        //     });
-        // }
+        if (
+            interaction.member.roles.highest.position <= targetMember.roles.highest.position &&
+            interaction.guild.ownerId !== interaction.user.id
+        ) {
+            return interaction.reply({
+                content: '❌ You cannot mute someone with a higher or equal role to you.',
+                ephemeral: true
+            });
+        }
 
         try {
+            // Add a defer reply to give more time for the timeout operation to complete
+            await interaction.deferReply();
+            
             // Discord uses timeouts to "mute" users
             await targetMember.timeout(durationMs, reason);
             
             // Send confirmation message
-            await interaction.reply({
-                content: `✅ ${targetUser.tag} has been muted for ${durationMinutes} minute(s).\nReason: ${reason}`,
-                ephemeral: false // Making this visible to everyone as it's a moderation action
+            await interaction.editReply({
+                content: `✅ ${targetUser.tag} has been muted for ${durationMinutes} minute(s).\nReason: ${reason}`
             });
             
             // Optional: DM the user to let them know they've been muted
@@ -95,10 +97,24 @@ module.exports = {
             
         } catch (error) {
             console.error('Error while muting user:', error);
-            return interaction.reply({
-                content: '❌ An error occurred while trying to mute the user.',
-                ephemeral: true
-            });
+            
+            // Provide a more detailed error message
+            const errorMessage = error.message 
+                ? `❌ Error: ${error.message}` 
+                : '❌ An unknown error occurred while trying to mute the user.';
+                
+            // If we deferred earlier, we need to editReply instead of reply
+            if (interaction.deferred) {
+                return interaction.editReply({
+                    content: errorMessage,
+                    ephemeral: true
+                });
+            } else {
+                return interaction.reply({
+                    content: errorMessage,
+                    ephemeral: true
+                });
+            }
         }
     }
 };
