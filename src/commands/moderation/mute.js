@@ -88,7 +88,7 @@ module.exports = {
             // Optional: DM the user to let them know they've been muted
             try {
                 await targetUser.send(
-                    `You have been muted in **${interaction.guild.name}** for ${durationMinutes} minute(s).\nReason: ${reason}`
+                    `You have been muted in **${interaction.guild.name}**'s server for ${durationMinutes} minute(s).\nReason: ${reason}`
                 );
             } catch (err) {
                 // User might have DMs closed, we can ignore this error
