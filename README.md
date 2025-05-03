@@ -76,7 +76,7 @@ A cybersecurity-focused Discord bot built with discord.js, featuring slash comma
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/n0h4ts-discord-bot.git
+   git clone https://github.com/cheongcode/n0h4ts-discord-bot
    cd n0h4ts-discord-bot
    ```
 
