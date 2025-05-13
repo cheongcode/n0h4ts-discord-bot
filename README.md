@@ -33,6 +33,19 @@ A cybersecurity-focused Discord bot built with discord.js, featuring slash comma
 - CVE description
 - Severity score from NIST database
 
+### 🏁 Flag Submission System
+
+| Command | Description | Usage |
+|---------|-------------|-------|
+| `/flag` | Submit a flag to receive a special role | `/flag value:your_flag_here` |
+
+**Features:**
+- Supports multiple flags with different assigned roles
+- Each flag can have a custom success message
+- Responses are ephemeral (only visible to the submitter)
+- Prevents duplicate role assignments
+- Configuration can be embedded in code or loaded from a JSON file
+
 ### 🎤 Temporary Channels
 
 | Command | Description | Usage |
