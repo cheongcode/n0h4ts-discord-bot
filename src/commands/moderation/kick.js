@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits} = require('discord.js');
 const { logModerationAction } = require('../../utils/moderationLogger');
 const {canModerateTarget} = require("../../utils/moderationPermissions");
+const {performKick} = require("../../utils/moderationActions");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -22,7 +23,7 @@ module.exports = {
         const targetMember = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
         const reason = interaction.options.getString('reason') || 'No reason provided';
 
-        const moderationCheck = canModerateTarget(interaction, targetMember, PermissionFlagsBits.ModerateMembers, "warn");
+        const moderationCheck = canModerateTarget(interaction, targetMember, PermissionFlagsBits.ModerateMembers, "kick");
         if (!moderationCheck.canModerate) {
             return interaction.reply({
                 content: moderationCheck.message,
@@ -30,19 +31,17 @@ module.exports = {
             });
         }
 
-
+        // Check if the user can be banned
+        if (targetMember && !targetMember.kickable) {
+            return await interaction.reply({
+                content: '❌ I cannot kick this user. They may have a higher role than me.',
+                ephemeral: true
+            });
+        }
 
         try {
 
-            // Check if the user can be kicked
-            if (!targetMember.kickable) {
-                return await interaction.reply({ 
-                    content: '❌ I cannot kick this user. They may have a higher role than me.',
-                    ephemeral: true 
-                });
-            }
-
-            await targetMember.kick(reason);
+            const kickResult = await performKick(targetMember, reason, interaction.user, interaction.guild);
 
             // Log the action
             await logModerationAction(interaction.client, {
@@ -55,9 +54,17 @@ module.exports = {
             });
 
             await interaction.reply({ 
-                content: `👢 Kicked ${user.tag} for: ${reason}`,
+                content: `👢 Kicked ${targetUser} for: ${reason}`,
                 ephemeral: true 
             });
+
+            if(kickResult.error){
+                await interaction.followUp({
+                    content: `:interrobang: ${kickResult.error}`,
+                    ephemeral: true
+                })
+            }
+
         } catch (error) {
             console.error('Error in kick command:', error);
             await interaction.reply({ 

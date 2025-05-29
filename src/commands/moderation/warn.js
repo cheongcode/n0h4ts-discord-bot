@@ -42,13 +42,20 @@ module.exports = {
             const warnResult = await performWarn(interaction.guild, targetMember, interaction.user, reason);
 
             await interaction.editReply({
-                content: `⚠️ Warned ${targetUser} for: ${reason}.${warnResult.error ? `\n${warnResult.error}` : ""}`,
+                content: `⚠️ Warned ${targetUser} for: ${reason}.}`,
                 ephemeral: true
             });
 
             if(warnResult.autoTimedOut){
                 await interaction.followUp({
                     content: `⚠️ ${targetUser} has received 3 warnings and has been timed out for 10 minutes.`,
+                    ephemeral: true
+                })
+            }
+
+            if(warnResult.error){
+                await interaction.followUp({
+                    content: `:interrobang: ${warnResult.error}`,
                     ephemeral: true
                 })
             }

@@ -1,6 +1,8 @@
-const { SlashCommandBuilder, PermissionsBitField } = require('discord.js');
+const { SlashCommandBuilder, PermissionsBitField, PermissionFlagsBits} = require('discord.js');
 const { hasModPermission } = require('../../utils/permissions');
 const { logModerationAction } = require('../../utils/moderationLogger');
+const {performBan} = require("../../utils/moderationActions");
+const {canModerateTarget} = require("../../utils/moderationPermissions");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,33 +15,44 @@ module.exports = {
         .addStringOption(option =>
             option.setName('reason')
                 .setDescription('Reason for the ban')
-                .setRequired(true)),
+                .setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
 
     async execute(interaction) {
+
+
+        const targetUser = interaction.options.getUser('user');
+        const targetMember = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+        const reason = interaction.options.getString('reason') || 'No reason provided';
+
+        const moderationCheck = canModerateTarget(interaction, targetMember, PermissionFlagsBits.ModerateMembers, "ban");
+        if (!moderationCheck.canModerate) {
+            return interaction.reply({
+                content: moderationCheck.message,
+                ephemeral: true
+            });
+        }
+
+        // Check if the user can be banned
+        if (targetMember && !targetMember.bannable) {
+            return await interaction.reply({
+                content: '❌ I cannot ban this user. They may have a higher role than me.',
+                ephemeral: true
+            });
+        }
+
         try {
-            const permissionCheck = hasModPermission(interaction, PermissionsBitField.Flags.BanMembers);
-            if (!permissionCheck.hasPermission) {
-                return await interaction.reply({ content: permissionCheck.message, ephemeral: true });
-            }
 
-            const user = interaction.options.getUser('user');
-            const reason = interaction.options.getString('reason');
-            const member = await interaction.guild.members.fetch(user.id).catch(() => null);
 
-            // Check if the user can be banned
-            if (member && !member.bannable) {
-                return await interaction.reply({ 
-                    content: '❌ I cannot ban this user. They may have a higher role than me.',
-                    ephemeral: true 
-                });
-            }
 
-            await interaction.guild.members.ban(user, { reason });
+            const banResult = await performBan(targetMember, reason, interaction.user, interaction.guild);
+
+            await interaction.guild.members.ban(targetUser, { reason });
 
             // Log the action
             await logModerationAction(interaction.client, {
                 actionType: 'ban',
-                user,
+                user: targetUser,
                 moderator: interaction.user,
                 reason,
                 guild: interaction.guild,
@@ -47,9 +60,18 @@ module.exports = {
             });
 
             await interaction.reply({ 
-                content: `🔨 Banned ${user.tag} for: ${reason}`,
+                content: `🔨 Banned ${targetUser} for: ${reason}`,
                 ephemeral: true 
             });
+
+            if(banResult.error){
+                await interaction.followUp({
+                    content: `:interrobang: ${banResult.error}`,
+                    ephemeral: true
+                })
+            }
+
+
         } catch (error) {
             console.error('Error in ban command:', error);
             await interaction.reply({ 

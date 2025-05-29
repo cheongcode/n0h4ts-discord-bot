@@ -18,19 +18,41 @@ async function performTimeout(targetMember, durationMs, reason, moderator, guild
     return {error}
 }
 
-async function performKick(targetMember, durationMs, reason, moderator, guild) {
+async function performKick(targetMember, reason, moderator, guild) {
 
     const auditLogReason = `Action by ${moderator.tag}. Reason: ${reason}`;
     let error = null;
+
     await targetMember.kick(auditLogReason);
 
+    // Need to message before kick due to some user's restrictions
     try {
-        await targetMember.user.send( // DM timeout to user
+        await targetMember.user.send(
             `You have been kicked out of **${guild.name}** for: ${reason}`
         );
     } catch (err) {
         error = `Could not DM user ${targetMember.user.tag} about their kick.`;
     }
+
+    return {error}
+}
+
+async function performBan(targetMember, reason, moderator, guild) {
+
+    const auditLogReason = `Action by ${moderator.tag}. Reason: ${reason}`;
+    let error = null;
+
+    // Need to message before ban due to some user's restrictions
+    try {
+        await targetMember.user.send(
+            `You have been banned from **${guild.name}** for: ${reason}`
+        );
+    } catch (err) {
+        error = `Could not DM user ${targetMember.user.tag} about their ban.`;
+    }
+
+    await targetMember.ban({reason: auditLogReason});
+
     return {error}
 }
 
@@ -113,5 +135,7 @@ function saveInfractions(infractionsData) {
 
 module.exports = {
     performTimeout,
-    performWarn
+    performWarn,
+    performKick,
+    performBan
 };
