@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionsBitField } = require('discord.js');
+const { SlashCommandBuilder, PermissionsBitField, PermissionFlagsBits} = require('discord.js');
 const { hasModPermission } = require('../../utils/permissions');
 const { logModerationAction } = require('../../utils/moderationLogger');
 
@@ -11,7 +11,8 @@ module.exports = {
                 .setDescription('Number of messages to delete (1-100)')
                 .setRequired(true)
                 .setMinValue(1)
-                .setMaxValue(100)),
+                .setMaxValue(100))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
 
     async execute(interaction) {
         try {
