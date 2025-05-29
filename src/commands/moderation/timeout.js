@@ -1,6 +1,8 @@
-const { SlashCommandBuilder, PermissionsBitField } = require('discord.js');
+const { SlashCommandBuilder, PermissionsBitField, PermissionFlagsBits} = require('discord.js');
 const { hasModPermission } = require('../../utils/permissions');
 const { logModerationAction } = require('../../utils/moderationLogger');
+const {canModerateTarget} = require("../../utils/moderationPermissions");
+const {performTimeout} = require("../../utils/moderationActions");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,26 +15,38 @@ module.exports = {
         .addStringOption(option =>
             option.setName('duration')
                 .setDescription('Duration (e.g., 30m, 1h, 24h)')
-                .setRequired(true))
+                .setRequired(false))
         .addStringOption(option =>
             option.setName('reason')
                 .setDescription('Reason for the timeout')
-                .setRequired(true)),
+                .setRequired(false))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
 
     async execute(interaction) {
-        try {
-            const permissionCheck = hasModPermission(interaction, PermissionsBitField.Flags.ModerateMembers);
-            if (!permissionCheck.hasPermission) {
-                return await interaction.reply({ content: permissionCheck.message, ephemeral: true });
-            }
 
-            const user = interaction.options.getUser('user');
-            const duration = interaction.options.getString('duration');
-            const reason = interaction.options.getString('reason');
-            const member = await interaction.guild.members.fetch(user.id);
+        const targetUser = interaction.options.getUser('user');
+        const targetMember = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+
+        const duration = interaction.options.getString('duration') || "5m";
+
+        // Get reason (or use default)
+        const reason = interaction.options.getString('reason') || 'No reason provided';
+
+        // Validation check including perms
+        const moderationCheck = canModerateTarget(interaction, targetMember, PermissionFlagsBits.ModerateMembers, "mute");
+        if (!moderationCheck.canModerate) {
+            return interaction.reply({
+                content: moderationCheck.message,
+                ephemeral: true
+            });
+        }
+
+        try {
+
 
             // Parse duration
             const durationMatch = duration.match(/^(\d+)([mhd])$/);
+
             if (!durationMatch) {
                 return await interaction.reply({ 
                     content: '❌ Invalid duration format. Use formats like 30m, 1h, 24h',
@@ -63,12 +77,15 @@ module.exports = {
                 });
             }
 
-            await member.timeout(durationInMs, reason);
+
+            // Discord uses timeouts to "mute" users
+            const resultTimeout = await performTimeout(targetMember, durationInMs, reason, interaction.user, interaction.guild);
+
 
             // Log the action
             await logModerationAction(interaction.client, {
                 actionType: 'timeout',
-                user,
+                user: targetUser,
                 moderator: interaction.user,
                 reason,
                 guild: interaction.guild,
@@ -77,9 +94,17 @@ module.exports = {
             });
 
             await interaction.reply({ 
-                content: `⏰ Timed out ${user.tag} for ${duration} for: ${reason}`,
+                content: `⏰ Timed out ${targetUser} for ${duration} for: ${reason}`,
                 ephemeral: true 
             });
+
+            if(resultTimeout.error){
+                await interaction.followUp({
+                    content: `:interrobang: ${resultTimeout.error}`,
+                    ephemeral: true
+                })
+            }
+
         } catch (error) {
             console.error('Error in timeout command:', error);
             await interaction.reply({ 

@@ -47,21 +47,18 @@ module.exports = {
             await interaction.deferReply();
 
             // Discord uses timeouts to "mute" users
-            await performTimeout(targetMember, durationMs, reason, interaction.user, interaction.guild);
+            const resultTimeout = await performTimeout(targetMember, durationMs, reason, interaction.user, interaction.guild);
 
             // Send confirmation message
             await interaction.editReply({
-                content: `✅ ${targetUser.tag} has been muted for ${durationMinutes} minute(s).\nReason: ${reason}`
+                content: `✅ ${targetUser} has been muted for ${durationMinutes} minute(s).\nReason: ${reason}`
             });
 
-            // DM the user to let them know they've been muted
-            try {
-                await targetUser.send(
-                    `You have been muted in **${interaction.guild.name}**'s server for ${durationMinutes} minute(s).\nReason: ${reason}`
-                );
-            } catch (err) {
-                // User might have DMs closed, we can ignore this error
-                console.log(`Could not DM user ${targetUser.tag} about their mute.`);
+            if(resultTimeout.error){
+                await interaction.followUp({
+                    content: `:interrobang: ${resultTimeout.error}`,
+                    ephemeral: true
+                })
             }
 
         } catch (error) {
