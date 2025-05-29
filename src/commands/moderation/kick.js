@@ -1,6 +1,6 @@
-const { SlashCommandBuilder, PermissionsBitField } = require('discord.js');
-const { hasModPermission } = require('../../utils/permissions');
+const { SlashCommandBuilder, PermissionFlagsBits} = require('discord.js');
 const { logModerationAction } = require('../../utils/moderationLogger');
+const {canModerateTarget} = require("../../utils/moderationPermissions");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,33 +13,41 @@ module.exports = {
         .addStringOption(option =>
             option.setName('reason')
                 .setDescription('Reason for the kick')
-                .setRequired(true)),
+                .setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
 
     async execute(interaction) {
-        try {
-            const permissionCheck = hasModPermission(interaction, PermissionsBitField.Flags.KickMembers);
-            if (!permissionCheck.hasPermission) {
-                return await interaction.reply({ content: permissionCheck.message, ephemeral: true });
-            }
 
-            const user = interaction.options.getUser('user');
-            const reason = interaction.options.getString('reason');
-            const member = await interaction.guild.members.fetch(user.id);
+        const targetUser = interaction.options.getUser('user');
+        const targetMember = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+        const reason = interaction.options.getString('reason') || 'No reason provided';
+
+        const moderationCheck = canModerateTarget(interaction, targetMember, PermissionFlagsBits.ModerateMembers, "warn");
+        if (!moderationCheck.canModerate) {
+            return interaction.reply({
+                content: moderationCheck.message,
+                ephemeral: true
+            });
+        }
+
+
+
+        try {
 
             // Check if the user can be kicked
-            if (!member.kickable) {
+            if (!targetMember.kickable) {
                 return await interaction.reply({ 
                     content: '❌ I cannot kick this user. They may have a higher role than me.',
                     ephemeral: true 
                 });
             }
 
-            await member.kick(reason);
+            await targetMember.kick(reason);
 
             // Log the action
             await logModerationAction(interaction.client, {
                 actionType: 'kick',
-                user,
+                user: targetUser,
                 moderator: interaction.user,
                 reason,
                 guild: interaction.guild,
